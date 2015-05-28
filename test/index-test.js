@@ -66,10 +66,10 @@ describe('fetchIndex', function() {
       }
     };
 
-    redis.set('myapp:abc123', 'foo').then(function(){
-      subject.fetchIndex('myapp', req, redis).then(function() {
-        expect(redisSpy.calledWith('myapp:abc123')).to.be.true;
-        expect(redisSpy.calledWith('myapp:abc 123')).to.be.false;
+    redis.set('myapp:index:abc123', 'foo').then(function(){
+      subject.fetchIndex('myapp:index', req, redis).then(function() {
+        expect(redisSpy.calledWith('myapp:index:abc123')).to.be.true;
+        expect(redisSpy.calledWith('myapp:index:abc 123')).to.be.false;
         done();
       }).catch(function(err) {
         done(err);
@@ -85,10 +85,10 @@ describe('fetchIndex', function() {
       }
     };
 
-    redis.set('myapp:abc123', 'foo').then(function(){
-      subject.fetchIndex('myapp', req, redis).then(function() {
-        expect(redisSpy.calledWith('myapp:abc123')).to.be.true;
-        expect(redisSpy.calledWith('myapp:ab@*#!c(@)123')).to.be.false;
+    redis.set('myapp:index:abc123', 'foo').then(function(){
+      subject.fetchIndex('myapp:index', req, redis).then(function() {
+        expect(redisSpy.calledWith('myapp:index:abc123')).to.be.true;
+        expect(redisSpy.calledWith('myapp:index:ab@*#!c(@)123')).to.be.false;
         done();
       }).catch(function(err) {
         done(err);
@@ -96,27 +96,12 @@ describe('fetchIndex', function() {
     });
   });
 
-  it('fails the promise with a critical error if appName:current is not present', function(done) {
-    redis.del('myapp:current').then(function(){
-      subject.fetchIndex('myapp', basicReq, redis).then(function() {
+  it('fails the promise with a critical error if appName:index:default is not present', function(done) {
+    redis.del('myapp:index:default').then(function(){
+      subject.fetchIndex('myapp:index', basicReq, redis).then(function() {
         done("Promise should not have resolved.");
       }).catch(function(err) {
-        expect(redisSpy.calledWith('myapp:current')).to.be.true;
-        expect(err.critical).to.be.true;
-        done();
-      });
-    });
-  });
-
-  it('fails the promise with a critical error if revision pointed to by appName:current is not present', function(done) {
-    redis.set('myapp:current', 'myapp:abc123').then(function(){
-      return redis.del('myapp:abc123');
-    }).then(function(){
-      subject.fetchIndex('myapp', basicReq, redis).then(function() {
-        done("Promise should not have resolved.");
-      }).catch(function(err) {
-        expect(redisSpy.calledWith('myapp:current')).to.be.true;
-        expect(redisSpy.calledWith('myapp:abc123')).to.be.true;
+        expect(redisSpy.calledWith('myapp:index:default')).to.be.true;
         expect(err.critical).to.be.true;
         done();
       });
@@ -129,11 +114,11 @@ describe('fetchIndex', function() {
         index_key: 'abc123'
       }
     };
-    redis.del('myapp:abc123').then(function(){
-      subject.fetchIndex('myapp', req, redis).then(function() {
+    redis.del('myapp:index:abc123').then(function(){
+      subject.fetchIndex('myapp:index', req, redis).then(function() {
         done("Promise should not have resolved.");
       }).catch(function(err) {
-        expect(redisSpy.calledWith('myapp:abc123')).to.be.true;
+        expect(redisSpy.calledWith('myapp:index:abc123')).to.be.true;
         expect(err.critical).to.be.false;
         done();
       });
@@ -142,13 +127,9 @@ describe('fetchIndex', function() {
 
   it('resolves the promise with the index html requested', function(done) {
     var currentHtmlString = '<html><body>1</body></html>';
-    Bluebird.all([
-      redis.set('myapp:current', 'myapp:abc123'),
-      redis.set('myapp:abc123', currentHtmlString),
-    ]).then(function(){
-      subject.fetchIndex('myapp', basicReq, redis).then(function(html) {
-        expect(redisSpy.calledWith('myapp:current')).to.be.true;
-        expect(redisSpy.calledWith('myapp:abc123')).to.be.true;
+    redis.set('myapp:index:default', currentHtmlString).then(function(){
+      subject.fetchIndex('myapp:index', basicReq, redis).then(function(html) {
+        expect(redisSpy.calledWith('myapp:index:default')).to.be.true;
         expect(html).to.equal(currentHtmlString);
         done();
       }).catch(function(err) {
@@ -166,14 +147,12 @@ describe('fetchIndex', function() {
       }
     };
     Bluebird.all([
-      redis.set('myapp:current', 'myapp:abc123'),
-      redis.set('myapp:abc123', currentHtmlString),
-      redis.set('myapp:def456', newDeployHtmlString)
+      redis.set('myapp:index:default', currentHtmlString),
+      redis.set('myapp:index:def456', newDeployHtmlString)
     ]).then(function(){
-      subject.fetchIndex('myapp', req, redis).then(function(html) {
-        expect(redisSpy.calledWith('myapp:current')).to.be.false;
-        expect(redisSpy.calledWith('myapp:abc123')).to.be.false;
-        expect(redisSpy.calledWith('myapp:def456')).to.be.true;
+      subject.fetchIndex('myapp:index', req, redis).then(function(html) {
+        expect(redisSpy.calledWith('myapp:index:default')).to.be.false;
+        expect(redisSpy.calledWith('myapp:index:def456')).to.be.true;
         expect(html).to.equal(newDeployHtmlString);
         done();
       }).catch(function(err) {
